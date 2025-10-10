@@ -6,4 +6,5 @@
 
 - **Clean_and_Timestamp.py**
   - PURPOSE: to convert DJI drone flightlog time into RFC3339 format timestamps
+  - EFFECTS: uses the provided csv file and dumps the cleaned version in Data/Cleaned/
   - USAGE: python .Clean_and_Timestamp.py <flightlog.csv>
