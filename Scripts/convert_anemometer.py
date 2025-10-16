@@ -16,7 +16,7 @@ What we do:
    - We interpret YY as 2000+YY (e.g., "23" -> year 2023).
    - We assume the timezone (default America/Vancouver) and then convert to UTC.
    - We output RFC3339 formated timestamp like: 2023-11-02T00:39:22.316Z
-3) Extract key/value pairs: 
+3) Extract key/value pairs:
     U (Zonal wind speed component == x-axis) , 
     V (Meridional wind speed component == y-axis), 
     T (Temperature), 
