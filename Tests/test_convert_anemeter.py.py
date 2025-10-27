@@ -25,3 +25,21 @@ def test_parse_timestamp_with_milliseconds():
 
     assert got == "2023-11-02T00:39:22.316Z"
 
+def test_parse_timestamp_rejects_bad_format():
+    """
+    A malformed timestamp (like 'bad:data:string') should not crash the script.
+    The function should handle it and return None.
+    """
+    assert parse_timestamp("bad:data:string", "America/Vancouver") is None
+
+# test for other timezones
+
+def test_parse_timestamp_other_timezone():
+    got = parse_timestamp("23:11:01:17:39:22.316", "UTC")
+    # 17:39 local UTC should remain 17:39Z
+    assert got == "2023-11-01T17:39:22.316Z"
+
+# empty strings test
+
+def test_parse_timestamp_empty_input():
+    assert parse_timestamp("", "America/Vancouver") is None
