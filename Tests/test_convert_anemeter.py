@@ -7,7 +7,9 @@ Will cover the following:
 3) line parsing
 """
 
-import csv 
+import csv
+import pytest
+from pathlib import Path
 
 # import the functions from the script.
 
@@ -43,3 +45,25 @@ def test_parse_timestamp_other_timezone():
 
 def test_parse_timestamp_empty_input():
     assert parse_timestamp("", "America/Vancouver") is None
+    
+# 2. Import Tests
+
+def test_convert_file_empty_file_errors(tmp_path):
+    """
+    Empty input should not silently succeed. Expect a controlled failure.
+    """
+    raw = tmp_path / "empty.txt"
+    raw.write_text("", encoding="utf-8")  # same as _write()
+    out = tmp_path / "out.csv"
+
+    with pytest.raises(SystemExit):  # expected failure type
+        convert_file(raw, out, "America/Vancouver", keep_sn=True)
+
+def test_csv_header_is_correct(tmp_path):
+    raw_file = Path("Data/Raw/Anemometer_data_23-11-01-17-39-22.txt")
+    out = tmp_path / "header.csv"
+
+    convert_file(raw_file, out, "America/Vancouver", keep_sn=True)
+
+    first_line = out.read_text().splitlines()[0]
+    assert first_line == "raw_ts,ts,sn1,sn2,U,V,T,BatteryPct,BattV,BattC"

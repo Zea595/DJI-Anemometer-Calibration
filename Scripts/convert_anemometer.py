@@ -136,6 +136,9 @@ def parse_timestamp(raw_ts, assume_tz_name):
     Convert '23:11:01:17:39:22.316' (YY:MM:DD:HH:MM:SS.mmm) to RFC3339 UTC string.
     Returns: (rfc3339_utc_str or None)
     """
+    if not raw_ts or not isinstance(raw_ts, str):
+        return None
+    
     try:
         # Split by ":"
         parts = raw_ts.split(":")
@@ -164,14 +167,14 @@ def parse_timestamp(raw_ts, assume_tz_name):
         # Turn 2-digit year into 2000-2099 range
         YYYY = 2000 + yy
 
-        # Make a "naive" datetime (no timezone yet)
-        dt_naive = datetime(YYYY, MM, DD, HH, mm, SS, micro)
-
-        # Attach the assumed local timezone (e.g., America/Vancouver), then convert to UTC
+       # Create timezone-aware datetime directly using ZoneInfo
+        # Handle potential DST ambiguity with fold parameter
         tz_local = ZoneInfo(assume_tz_name)
-        dt_local = dt_naive.replace(tzinfo=tz_local)
+        dt_local = datetime(YYYY, MM, DD, HH, mm, SS, micro, tzinfo=tz_local, fold=0)
+        
+        # Convert to UTC
         dt_utc = dt_local.astimezone(timezone.utc)
-
+        
         # RFC3339 format. Include milliseconds only if we actually had them.
         if micro:
             # Milliseconds are the first 3 digits of microseconds
@@ -179,7 +182,9 @@ def parse_timestamp(raw_ts, assume_tz_name):
             return dt_utc.strftime(f"%Y-%m-%dT%H:%M:%S.{ms}Z")
         else:
             return dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    except Exception:
+        
+    except Exception as e:
+        print(f"DEBUG: parse_timestamp failed on '{raw_ts}': {type(e).__name__}: {e}")
         return None
 
 def convert_file(input_path, output_path, assume_tz_name, keep_sn=True):
@@ -189,6 +194,11 @@ def convert_file(input_path, output_path, assume_tz_name, keep_sn=True):
             parsed = parse_line(line, assume_tz_name, keep_sn=keep_sn)
             if parsed is not None:
                 rows.append(parsed)
+
+
+    if len(rows) == 0:
+        print("Error: No valid data lines found in input file.")
+        sys.exit(1)
 
     # Decide which columns to write
     columns = ["raw_ts", "ts", "U", "V", "T", "BatteryPct", "BattV", "BattC"]

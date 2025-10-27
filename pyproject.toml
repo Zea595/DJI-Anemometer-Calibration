@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+addopts = "-ra -q"          # cleaner pytest output
+pythonpath = ["Scripts"]    # tells pytest where to find your modules
+testpaths = ["Tests"]       # where to look for tests
