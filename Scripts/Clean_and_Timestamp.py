@@ -32,13 +32,17 @@ def format_time(df_filtered, start_time):
     )
 
     # TimeStamp column is the final RFC3339 format
-    df_filtered['TimeStamp'] = df_filtered['CUSTOM.date [local]'] + ":" + df_filtered['df_offset_time']
+    df_filtered['TimeStamp'] = df_filtered['CUSTOM.date [local]'] + "T" + df_filtered['df_offset_time'] + "Z"
+    df_filtered.insert(0,"measurement", "DJI_Sensors")
+    df_filtered.insert(0,"field", "Weather_Data")
 
     # Drop the columns we don't need
     df_filtered.drop('df_offset_time', axis=1, inplace=True)
     df_filtered.drop('CUSTOM.date [local]', axis=1, inplace=True)
-    df_filtered.drop('OSD.flyTime [s]', axis=1, inplace=True)                     
-    return df_filtered
+    df_filtered.drop('OSD.flyTime [s]', axis=1, inplace=True)  
+
+    new_df = df_filtered.add_prefix("_")                   
+    return new_df
 
 
 
