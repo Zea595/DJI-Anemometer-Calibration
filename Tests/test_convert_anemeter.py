@@ -67,3 +67,33 @@ def test_csv_header_is_correct(tmp_path):
 
     first_line = out.read_text().splitlines()[0]
     assert first_line == "raw_ts,ts,sn1,sn2,U,V,T,BatteryPct,BattV,BattC"
+
+def test_parse_line_valid_data():
+    """Test parsing a complete valid line"""
+    line = "23:11:01:17:39:22.316 SN150 SN151 U -00.90 V -00.21 T 19.78 Battery% 100 BATTV 4.16 BATTC 0.000"
+    result = parse_line(line, "America/Vancouver", keep_sn=True)
+    
+    assert result is not None
+    assert result["sn1"] == 150
+    assert result["sn2"] == 151
+    assert result["U"] == -0.90
+    assert result["V"] == -0.21
+    assert result["T"] == 19.78
+    assert result["BatteryPct"] == 100.0
+    assert result["BattV"] == 4.16
+    assert result["BattC"] == 0.0
+
+def test_parse_timestamp_invalid_date():
+    """Test invalid dates like Feb 31"""
+    got = parse_timestamp("23:02:31:17:39:22.316", "UTC")
+    assert got is None  # Feb 31 doesn't exist
+
+def test_parse_timestamp_invalid_time():
+    """Test invalid times like 25:00:00"""
+    got = parse_timestamp("23:11:01:25:00:00.000", "UTC")
+    assert got is None
+
+def test_convert_file_missing_input_file():
+    """Test that missing input file raises appropriate error"""
+    with pytest.raises(FileNotFoundError):
+        convert_file("nonexistent.txt", "out.csv", "UTC")
