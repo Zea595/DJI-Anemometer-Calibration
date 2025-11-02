@@ -1,33 +1,30 @@
 from datetime import datetime
 import argparse
+import csv
 
 
 
-class Compare:
-    def __init__(self):
-        
+def compare_time(DJI,ANE): #if DJI.time == ame.time: pass the speed and direction variables into the vector_math function.
+
         pass
+
+def get_txt_file(file_path):
+    with open(file_path, "r") as file: # assume the files are already cleaned
+        data = file.readlines() 
+        return data
     
-    def compare_time(self,DJI,ANE): 
+def get_csv_file(self,file_path)
+    with open(file_path, "r") as csvfile:
+        data = csv.reader(csvfile)
+        return dats
 
-        pass
+def parse_ame_line(self,text): #changes the datetime format to match the DJI drone data.
 
-    def get_txt_file(self,file_path):
-        with open(file_path, "r") as file: # assume the files are already cleaned
-            data = file.readlines() 
-            return data
+     pass
 
-        pass
-    
-    def get_csv_file(self,file_path)
+def vector_math(self,v1,v2):
 
-    def parse_ame_line(self,text):
-
-        pass
-
-    def vector_math(self,v1,v2):
-
-        pass
+     pass
 
 def main():
     compare = Compare()
