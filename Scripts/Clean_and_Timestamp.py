@@ -29,7 +29,7 @@ def format_time(df_filtered, start_time):
 
     df_filtered['df_offset_time'] = df_filtered['OSD.flyTime [s]'].apply(
         lambda s: (start_time_object + timedelta(seconds=float(s))).strftime("%H:%M:%S")
-    )
+    ) 
 
     # TimeStamp column is the final RFC3339 format
     df_filtered['TimeStamp'] = df_filtered['CUSTOM.date [local]'] + ":" + df_filtered['df_offset_time']
