@@ -1,43 +1,47 @@
 from pathlib import Path
 import pandas as pd
 import re, sys
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 '''
+USAGE: python/python3 .Clean_and_Timestamp.py <PATH_TO_RAW_DRONE_CSV>
+    > file will be outputted to Data/Cleaned as CLEAN_originalFileName
+
 PURPOSE OF THIS SCRIPT
-- parse out the WEATHER columns
-- parse out the time from the file's title
-- parse out the CUSTOM columns
+- DRONE WAS FLOWN IN LOS ANGELES, GPS COORDS LATITUDE:33.8 LONGITUDE:-117
 
-With all of the above:
-- RECONSTRUCT the timestamp into clock time (format of the anemometer)
-- new timestamp will be in RFC3339 timestamp format: YYYY-MM-DDT00:00:00Z
-
-
-HOW TO USE:
-python .Clean_and_Timestamp.py <file_path>
+- COMBINE DATE COLUMN WITH TIME COLUMN
+- Format LOCAL TIME (PST) TO UTC
+- OUTPUT to new column called "Drone_Time(UTC+RFC3339)
+- OUTPUT to new csv file in Data/Cleaned
 
 '''
 
 # format_time is a helper function to parse the start time string into a datetime object
 # df_filtered = the columns we have selected for this experiment
 
-# RETURNS: the timestamp in string format in RFC3339 format
-def format_time(df_filtered, start_time):
-    
-    start_time_object = datetime.strptime(start_time, '%H:%M:%S')
+def convert_UTC(row):
 
-    df_filtered['df_offset_time'] = df_filtered['OSD.flyTime [s]'].apply(
-        lambda s: (start_time_object + timedelta(seconds=float(s))).strftime("%H:%M:%S")
-    ) 
+    pst_time = row['Drone_Time(PST)']
+    format_data = "%Y-%m-%d %I:%M:%S.%f %p"
+
+    date = datetime.strptime(pst_time, format_data)
+    date_aware = date.replace(tzinfo=ZoneInfo("America/Los_Angeles"))
+    utc_time = date_aware.astimezone(timezone.utc)
+    rfc3339_utc = utc_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  
+
+    return rfc3339_utc
+
+def format_time(df_filtered):
 
     # TimeStamp column is the final RFC3339 format
-    df_filtered['TimeStamp'] = df_filtered['CUSTOM.date [local]'] + ":" + df_filtered['df_offset_time']
+    df_filtered['Drone_Time(PST)'] = df_filtered['CUSTOM.date [local]'] + ' ' + df_filtered['CUSTOM.updateTime [local]']
+    df_filtered['Drone_Time(UTC+RFC3339)'] = df_filtered.apply(convert_UTC, axis=1)
 
     # Drop the columns we don't need
-    df_filtered.drop('df_offset_time', axis=1, inplace=True)
     df_filtered.drop('CUSTOM.date [local]', axis=1, inplace=True)
-    df_filtered.drop('OSD.flyTime [s]', axis=1, inplace=True)                     
+               
     return df_filtered
 
 
@@ -55,21 +59,15 @@ def main():
     df = pd.read_csv(filepath)
 
     # Filter columns that start with "CUSTOM" (CUSTOM includes the date) or "WEATHER" 
-    relevant_cols = [c for c in df.columns if c.startswith('WEATHER') or c == 'OSD.flyTime [s]' or c == 'CUSTOM.date [local]']
+    relevant_cols = [c for c in df.columns if c.startswith('CUSTOM') or c.startswith('WEATHER')]
 
     # Keep only those columns
     df_filtered = df[relevant_cols]
 
-    # parse the starting time from filename:
-    match = re.findall(r'\[(\d{2}-\d{2}-\d{2})\]', filename)
-    if match:
-        start_time = match[0].replace('-', ':')
-        formatted_time = format_time(df_filtered, start_time)
+    formatted_time = format_time(df_filtered)
+    output = pd.DataFrame(formatted_time)
+    output.to_csv(csv_path_output, index=False)
 
-        output = pd.DataFrame(formatted_time)
-        output.to_csv(csv_path_output, index=False)
-    else:
-        print("Cannot find timestamp in file title.")
 
 
 if __name__ == "__main__":
