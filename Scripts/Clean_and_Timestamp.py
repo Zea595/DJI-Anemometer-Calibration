@@ -5,12 +5,13 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 '''
-USAGE: python/python3 .Clean_and_Timestamp.py <PATH_TO_RAW_DRONE_CSV>
+USAGE: python/python3 .Clean_and_Timestamp.py <PATH_TO_FOLDER>
     > file will be outputted to Data/Cleaned as CLEAN_originalFileName
 
 PURPOSE OF THIS SCRIPT
 - DRONE WAS FLOWN IN LOS ANGELES, GPS COORDS LATITUDE:33.8 LONGITUDE:-117
 
+*UPDATE* - *script now combines all raw csv files together and makes it into one list*
 - COMBINE DATE COLUMN WITH TIME COLUMN
 - Format LOCAL TIME (PST) TO UTC
 - OUTPUT to new column called "Drone_Time(UTC+RFC3339)
@@ -44,6 +45,18 @@ def format_time(df_filtered):
                
     return df_filtered
 
+def combineCSVInDir(csv_folder_path):
+    # Use .iterdir() to iterate through files in the directory
+    csv_files = [f for f in Path(csv_folder_path).iterdir() if f.suffix == '.csv']
+
+    all_dataframes = []
+    for csv_file in csv_files:
+        df = pd.read_csv(csv_file)
+        all_dataframes.append(df)
+
+    combined_df = pd.concat(all_dataframes, ignore_index=True)
+    return combined_df
+
 
 
 def main():
@@ -51,12 +64,14 @@ def main():
     script_path = Path(__file__).resolve()
 
     filepath = Path(sys.argv[1])
-    filename = filepath.name
+    # filename = filepath.name
 
-    csv_path_output = script_path.parent.parent / 'Data' / 'Cleaned' / f'CLEAN_{filename}'
+    # csv_path_output = script_path.parent.parent / 'Data' / 'Cleaned' / f'CLEAN_{filename}'
+    csv_path_output = script_path.parent.parent / 'Data' / 'Cleaned' / f'CLEAN_COMBINED.csv'
 
     # Read the CSV
-    df = pd.read_csv(filepath)
+    # df = pd.read_csv(filepath)
+    df = combineCSVInDir(filepath)
 
     # Filter columns that start with "CUSTOM" (CUSTOM includes the date) or "WEATHER" 
     relevant_cols = [c for c in df.columns if c.startswith('CUSTOM') or c.startswith('WEATHER')]
