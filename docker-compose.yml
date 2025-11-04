@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: rpas_postgres
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5433"
+
+  python:
+    image: python:3.11-slim
+    container_name: rpas_importer
+    working_dir: /app
+    volumes:
+      - ./scripts:/app
+      - ./data:/data
+    env_file:
+      - .env
+    command: ["bash", "-c", "pip install -r requirements.txt && tail -f /dev/null"]
+
+jupyter:
+  image: jupyter/base-notebook:latest
+  container_name: rpas_jupyter
+  restart: unless-stopped
+  environment:
+    - JUPYTER_TOKEN=droneviz
+  ports:
+    - "8888:8888"
+  volumes:
+    - ./scripts:/home/jovyan/work/scripts
+    - ./data:/home/jovyan/work/data
+    - ./notebooks:/home/jovyan/work/notebooks
+    - ./requirements.txt:/tmp/requirements.txt
+  depends_on:
+    - postgres
+  command: >
+    bash -c "pip install -r /tmp/requirements.txt && start-notebook.sh"
+
+
+volumes:
+  pgdata:
