@@ -1,5 +1,5 @@
 """
-convert_anemometer_simple_v2.py
+convert_anemometer_v2.py
 
 Goal (v2 changes):
 ------------------
