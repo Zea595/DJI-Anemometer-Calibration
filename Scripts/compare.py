@@ -18,11 +18,6 @@ def get_csv_file(file_path):
             
         return data
 
-
-def compare_time(DJI,ANE): #if DJI.time == ame.time: pass the speed and direction variables into the vector_math function.
-
-    pass
-
 def vector_math(s1,s2):  # s1 = u, s2 = v
     u = s1 #U component
     v = s2 #V component
@@ -32,12 +27,11 @@ def vector_math(s1,s2):  # s1 = u, s2 = v
     else:
         speed = (u**2 + v**2)**0.5  
         
-        direction = (180 / 3.14159) * -1 * (math.atan2(v, u)) + 270  
+        direction = (180 / 3.14159) * -1 * (math.atan2(v, u)) + 270  # Direction in degrees from North
         
         direction = direction % 360  
         return speed, direction
 
-    pass
 
 
 
@@ -79,29 +73,7 @@ def main():
     
     args = parser.parse_args()
     
-    #print(args)
-    # print(args.Anemometer)
-    # print(args.DJI)
-
-    ame = get_csv_file(args.Anemometer)
-    dji = get_csv_file(args.DJI)
-    
-    
-
-    # print("ame:", ame[1]) # txt
-    # print("dji:", dji[1]) # csv
-    
-    # print(ame[1]["ts"])
-    # print(dji[1]["TimeStamp"])
-    # # test_functions(ame)
-
-
-    # # for line in ame:
-    # #     extra_needed_functions.parse_ame_line(line)
-        
-    # print()
-    # print("ame after:", ame[1])
-    # print("dji:", dji[1])
+    ame = get_csv_file(args.Anemometer)    
     
     # test(ame,dji)
     
@@ -114,10 +86,9 @@ def main():
             print("Invalid data in line:", ame_line)
             math_data.append((None, None))
             continue
-        try:
-            math_data.append(vector_math(float(ame_line["U"]), float(ame_line["V"])))
-        except ValueError:
-            print("Error processing line:", ame_line)
+       
+        math_data.append(vector_math(float(ame_line["U"]), float(ame_line["V"])))
+        
 
     with open("./Data/Cleaned/vector_output.csv", "w", newline="") as csvfile:
         fieldnames = ["U", "V", "Speed", "Direction"]
@@ -141,13 +112,3 @@ def main():
 if __name__ == "__main__":
     
     main()
-
-    
-    
-    
-    
-
-# ask how to get direction from the two vectors (vector math)
-# focus on direction of wind / no relative 
-
-### WEATHER.windDirection, WEATHER.windSpeed
