@@ -26,7 +26,7 @@ def vector_math(s1,s2):  # s1 = u, s2 = v
     else:
         speed = np.sqrt(u**2 + v**2) # a^2 + b^2 = c^2 NOTE calculating for c
         
-        direction = (-math.degrees(math.atan2(v, u)) + 270) % 360
+        direction = (math.degrees(math.atan2(v,u)) + 360) % 360
 
         return speed, direction
 
