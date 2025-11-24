@@ -38,7 +38,48 @@ import argparse
 import csv
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo  # kept for consistency of format, not used for tz conversion
-import sys
+import sys, pathlib
+import math
+import os
+from pathlib import Path
+import numpy as np
+
+def get_wind_speed(u, v):
+    """
+    Calculates the magnitude of the wind vector.
+    Uses math.hypot(u, v) which is equivalent to sqrt(u*u + v*v)
+    """
+    return math.hypot(u, v)
+
+def get_wind_direction(u, v):
+    """
+    Calculates the wind direction in degrees (0-360).
+    0 = North, 90 = East, 180 = South, 270 = West.
+    Returns the direction the wind is COMING FROM.
+    """
+    # # Calculate the angle in radians using atan2(y, x)
+    # angle_radians = math.atan2(v, u)
+    # # Convert to degrees
+    # angle_degrees = math.degrees(angle_radians)
+    # # 3. Convert from "Math Angle" (0 is East, Counter-Clockwise) 
+    # # to "Meteorological Angle" (0 is North, Clockwise)
+    # wind_direction = (270 - angle_degrees) % 360
+    return (270-math.atan2(v,u)*180/math.pi) % 360
+
+def get_cardinal_point(degree):
+    """
+    Converts degrees (0-360) to a cardinal point string.
+    Handles 16-point compass (N, NNE, NE, etc.)
+    """
+    directions = [
+        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
+    ]
+    # There are 360 degrees and 16 directions. 
+    # Each direction covers a sector of 360 / 16 = 22.5 degrees.
+    # We shift by half a sector (11.25) so that "N" centers on 0/360.
+    index = int((degree + 11.25) / 22.5)
+    return directions[index % 16]
 
 def parse_line(line, assume_tz_name, keep_sn=True):
     """
@@ -73,6 +114,9 @@ def parse_line(line, assume_tz_name, keep_sn=True):
         "BatteryPct": "",
         "BattV": "",
         "BattC": "",
+        "VectorMag": "",
+        "VectorDir": "",
+        "cardinal_dir": "",
     }
 
     # 2) Key/value pairs for the rest of the items
@@ -112,6 +156,23 @@ def parse_line(line, assume_tz_name, keep_sn=True):
 
         # If item is neither a key nor a value, we skip it
         index += 1
+
+    # Derived wind metrics
+    try:
+        u_value = float(row["U"])
+        v_value = float(row["V"])
+
+        vector_mag = get_wind_speed(u_value, v_value)       # magnitude
+        vector_dir = get_wind_direction(u_value, v_value)   # degrees (coming from)
+        cardinal_dir = get_cardinal_point(vector_dir)       # N, NNE, NE, etc.
+
+        row["VectorMag"] = round(vector_mag, 3)
+        row["VectorDir"] = round(vector_dir, 2)
+        row["cardinal_dir"] = cardinal_dir
+
+    except Exception:
+        # U or V were missing or invalid → leave derived fields blank
+        pass
 
     return row
 
@@ -162,7 +223,11 @@ def parse_timestamp(raw_ts, assume_tz_name_unused):
     except Exception:
         return None
 
-def convert_file(input_path, output_path, assume_tz_name):
+def convert_file(input_path, output_path=None, assume_tz_name="America/Vancouver", keep_sn=True):
+
+    base_name = os.path.splitext(os.path.basename(input_path))[0]
+    output_path = Path("data/Anemometer_data_cleaned.csv")
+
     rows = []
     with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
         for line in f:
@@ -171,7 +236,7 @@ def convert_file(input_path, output_path, assume_tz_name):
                 rows.append(parsed)
 
     # Decide which columns to write
-    columns = ["raw_ts", "ts", "U", "V", "T", "BatteryPct", "BattV", "BattC"]
+    columns = ["raw_ts", "ts", "U", "V", "T", "BatteryPct", "BattV", "BattC", "VectorMag", "VectorDir", "cardinal_dir"]
 
     with open(output_path, "w", newline="", encoding="utf-8") as out:
         writer = csv.DictWriter(out, fieldnames=columns)

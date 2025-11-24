@@ -6,6 +6,23 @@ import numpy as np
 
 
 
+def vector_math(s1,s2):  # s1 = u, s2 = v
+    u = s1 #U component
+    v = s2 #V component
+    
+    if u == 0 and v == 0:
+        return 0,0  # No wind
+    else:
+        speed = np.sqrt(u**2 + v**2) # a^2 + b^2 = c^2 NOTE calculating for c
+        
+        direction = (math.degrees(math.atan2(v,u)) + 360) % 360
+
+        return speed, direction
+    
+'''
+Rest of the stuff below is legacy code (earlier implementation reads files to do math)
+'''
+
 # def get_csv_file(file_path):
 #     with open(file_path, "r") as csvfile:
 #         filedata = csv.DictReader(csvfile) # reads the csv into a dictionary format
@@ -16,21 +33,6 @@ import numpy as np
 #             data.append(row)
             
 #         return data
-
-def vector_math(s1,s2):  # s1 = u, s2 = v
-    u = s1 #U component
-    v = s2 #V component
-    
-    if u == 0 and v == 0:
-        return 0,0  # No wind
-    else:
-        speed = np.sqrt(u**2 + v**2) # a^2 + b^2 = c^2 NOTE calculating for c
-        
-        direction = (-math.degrees(math.atan2(v, u)) + 270) % 360
-
-        return speed, direction
-
-
 
 
 # class extra_needed_functions:

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Drone / Anemometer Data</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: sans-serif;
+      margin: 50px;
+    }
+    h2 { color: #7cf; }
+    label { font-weight: bold; }
+    input[type="file"] { color: #ccc; }
+    input[type="submit"] {
+      background-color: #3a9;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    input[type="submit"]:hover {
+      background-color: #2a8;
+    }
+    ul { list-style: none; padding: 0; }
+    li { margin: 10px 0; color: #9f9; }
+    a {
+      color: #4af;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a:hover { text-decoration: underline; }
+    hr {
+      border: 0;
+      height: 1px;
+      background: #444;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Upload Drone / Anemometer Data</h2>
+  <form method="POST" action="/upload" enctype="multipart/form-data">
+    <label>Drone CSV:</label><br>
+    <input type="file" name="drone" multiple /><br><br>
+    <label>Anemometer TXT:</label><br>
+    <input type="file" name="anemo"><br><br>
+    <input type="submit" value="Upload & Process">
+  </form>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <hr>
+      <ul>
+      {% for msg in messages %}
+        <li>{{ msg }}</li>
+      {% endfor %}
+      </ul>
+      <p><a href="{{ url_for('analytics') }}">→ View Analytics Dashboard</a></p>
+    {% endif %}
+  {% endwith %}
+</body>
+</html>
