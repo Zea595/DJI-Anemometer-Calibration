@@ -203,6 +203,28 @@ def generate_plots():
         s=2,
         color="tab:orange",
     )
+
+    num_drone = len(drone)
+    num_anemo = len(anemo)
+    num_matched = len(merged)
+    match_pct = (num_matched / num_drone) * 100
+
+    stats_text = (
+        f"Drone rows: {num_drone}\n"
+        f"Anemometer rows: {num_anemo}\n"
+        f"Matched pairs: {num_matched}\n"
+        f"Match rate: {match_pct:.1f}%"
+    )
+
+    plt.gca().text(
+        0.01, 0.99,
+        stats_text,
+        transform=plt.gca().transAxes,
+        fontsize=9,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.75)
+    )
+    
         # Limit X-axis to min/max range rather than showing every timestamp
     plt.gca().set_xlim(
         merged["Drone_Time_PST_for_plot"].min(),

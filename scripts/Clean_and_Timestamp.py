@@ -84,6 +84,7 @@ def combine_csv_from_list(paths: Iterable[Union[str, Path]]) -> pd.DataFrame:
     # Accept strings or Paths; filter to .csv case-insensitively
     file_paths: List[Path] = []
     for p in paths:
+        print(f'Path:{p}')
         pp = Path(p)
         if pp.suffix.lower() == ".csv":
             file_paths.append(pp)
@@ -126,12 +127,14 @@ def convert_cardinal_to_degrees(df, column_name="WEATHER.windDirection"):
         "WNW": 292.5, "NW": 315, "NNW": 337.5
     }
 
+    flipped_map = {k: (deg + 180) % 360 for k, deg in direction_map.items()}
+
     # Normalize input (strip spaces, uppercase)
     df = df.copy()
     df[column_name] = df[column_name].astype(str).str.strip().str.upper()
 
     # Map directions to degrees, leaving NaN if invalid
-    df["Drone_Direction"] = df[column_name].map(direction_map)
+    df["Drone_Direction"] = df[column_name].map(flipped_map)
 
     return df
 
