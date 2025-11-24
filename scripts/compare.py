@@ -52,7 +52,11 @@ def load_data():
     drone["Drone_Time(UTC+RFC3339)"] = pd.to_datetime(
         drone["Drone_Time(UTC+RFC3339)"], utc=True, errors="coerce"
     )
+    drone["Drone_Time(PST)_Clean"] = pd.to_datetime(drone["Drone_Time(PST)_Clean"], errors="coerce")
+    drone["Drone_Time(PST)_Clean"] = drone["Drone_Time(PST)_Clean"].dt.tz_convert(None)
+
     anemo["ts"] = pd.to_datetime(anemo["ts"], utc=True, errors="coerce")
+    
 
     # Drop invalid timestamps
     drone = drone.dropna(subset=["Drone_Time(UTC+RFC3339)"])
@@ -62,7 +66,7 @@ def load_data():
     numeric_cols = [
         "VectorMag", "VectorDir", "U", "V",
         "BatteryPct", "BattV", "BattC",
-        "WEATHER.windSpeed [MPH]", "WEATHER.windDirection"
+        "WindSpeed(m/s)", "WEATHER.windDirection"
     ]
     for df_name, df in [("Drone", drone), ("Anemometer", anemo)]:
         for col in numeric_cols:
@@ -70,10 +74,10 @@ def load_data():
                 df[col] = pd.to_numeric(df[col], errors="coerce")
 
     # Debug info for ranges
-    print("\n[DEBUG] Drone time range:")
-    print(" ", drone["Drone_Time(UTC+RFC3339)"].min(), "→", drone["Drone_Time(UTC+RFC3339)"].max())
-    print("[DEBUG] Anemometer time range:")
-    print(" ", anemo["ts"].min(), "→", anemo["ts"].max())
+    # print("\n[DEBUG] Drone time range:")
+    # print(" ", drone["Drone_Time(UTC+RFC3339)"].min(), "→", drone["Drone_Time(UTC+RFC3339)"].max())
+    # print("[DEBUG] Anemometer time range:")
+    # print(" ", anemo["ts"].min(), "→", anemo["ts"].max())
 
     return drone, anemo, drone_path
 
@@ -98,6 +102,13 @@ def compare_vectors(drone, anemo, tolerance_seconds=10, direction_tolerance=15):
         tolerance=pd.Timedelta(seconds=tolerance_seconds),
     )
 
+    # derive local time from UTC
+    merged["Drone_Time_PST_for_plot"] = (
+        merged["Drone_Time(UTC+RFC3339)"]
+        .dt.tz_convert("America/Los_Angeles")  # convert UTC -> PST/PDT
+        .dt.tz_localize(None)                  # drop tzinfo but keep local clock time
+    )
+
     # Drop rows where direction difference > tolerance
     merged = merged[
         merged.apply(
@@ -109,14 +120,14 @@ def compare_vectors(drone, anemo, tolerance_seconds=10, direction_tolerance=15):
         )
     ].reset_index(drop=True)
 
-    if "VectorMag" not in merged.columns or "WEATHER.windSpeed [MPH]" not in merged.columns:
-        raise KeyError("[ERROR] Missing one or more required columns: 'VectorMag', 'WEATHER.windSpeed [MPH]'")
+    if "VectorMag" not in merged.columns or "WindSpeed(m/s)" not in merged.columns:
+        raise KeyError("[ERROR] Missing one or more required columns: 'VectorMag', 'WindSpeed(m/s)'")
 
     # Convert again to be sure (handles merge dtype promotion)
-    for col in ["VectorMag", "VectorDir", "WEATHER.windSpeed [MPH]", "WEATHER.windDirection"]:
+    for col in ["VectorMag", "VectorDir", "WindSpeed(m/s)", "WEATHER.windDirection"]:
         merged[col] = pd.to_numeric(merged[col], errors="coerce")
 
-    merged = merged.dropna(subset=["VectorMag", "WEATHER.windSpeed [MPH]"], how="any")
+    merged = merged.dropna(subset=["VectorMag", "WindSpeed(m/s)"], how="any")
 
     print(f"[INFO] Matched {len(merged)} rows after merge.")
     if len(merged) == 0:
@@ -124,7 +135,7 @@ def compare_vectors(drone, anemo, tolerance_seconds=10, direction_tolerance=15):
         return merged
 
     # Compute metrics
-    merged["speed_diff"] = merged["WEATHER.windSpeed [MPH]"] - merged["VectorMag"]
+    merged["speed_diff"] = merged["WindSpeed(m/s)"] - merged["VectorMag"]
     merged["speed_pct_diff"] = (
         (merged["speed_diff"].abs() / merged["VectorMag"].replace(0, np.nan)) * 100
     )
@@ -179,22 +190,28 @@ def generate_plots():
     # --- 1. Wind Speed Comparison ---
     plt.figure(figsize=(10, 5))
     plt.scatter(
-        merged["Drone_Time(UTC+RFC3339)"],
-        merged["WEATHER.windSpeed [MPH]"],
-        label="Drone Wind Speed (mph)",
+        merged["Drone_Time_PST_for_plot"],
+        merged["WindSpeed(m/s)"],
+        label="Drone Wind Speed (m/s)",
         s=2,           # marker size
         color="tab:blue",
     )
     plt.scatter(
-        merged["Drone_Time(UTC+RFC3339)"],
+        merged["Drone_Time_PST_for_plot"],
         merged["VectorMag"],
-        label="Anemometer Wind Speed (mph)",
+        label="Anemometer Wind Speed (m/s)",
         s=2,
         color="tab:orange",
     )
+        # Limit X-axis to min/max range rather than showing every timestamp
+    plt.gca().set_xlim(
+        merged["Drone_Time_PST_for_plot"].min(),
+        merged["Drone_Time_PST_for_plot"].max()
+    )
+
     plt.legend()
-    plt.xlabel("Timestamp (UTC)")
-    plt.ylabel("Speed (mph)")
+    plt.xlabel("Timestamp (PST)")
+    plt.ylabel("Speed (m/s)")
     plt.title("Wind Speed Comparison: Drone vs Anemometer (±5s timestamp tolerance, ±10 degrees)")
     plt.tight_layout()
     plt.savefig(f"{PLOT_DIR}/wind_comparison.png", dpi=150)
@@ -203,7 +220,7 @@ def generate_plots():
     # --- 2. Percentage Difference ---
     plt.figure(figsize=(10, 5))
     plt.scatter(
-        merged["Drone_Time(UTC+RFC3339)"],
+        merged["Drone_Time_PST_for_plot"],
         merged["speed_pct_diff"],
         color="orange",
         s=2,
@@ -225,6 +242,9 @@ def generate_plots():
         color="royalblue",
         label="Samples"
     )
+
+        # Limit X-axis to min/max range rather than showing every timestamp
+
 
     # Set cardinal direction ticks for the drone (Y-axis)
     cardinal_degrees = [0, 45, 90, 135, 180, 225, 270, 315]
@@ -281,12 +301,19 @@ def generate_plots():
     # --- 3. Direction Difference ---
     plt.figure(figsize=(10, 5))
     plt.scatter(
-        merged["Drone_Time(UTC+RFC3339)"],
+        merged["Drone_Time_PST_for_plot"],
         merged["dir_diff"],
         color="purple",
         s=10,
     )
-    plt.xlabel("Timestamp (UTC)")
+
+        # Limit X-axis to min/max range rather than showing every timestamp
+    plt.gca().set_xlim(
+        merged["Drone_Time_PST_for_plot"].min(),
+        merged["Drone_Time_PST_for_plot"].max()
+    )
+
+    plt.xlabel("Timestamp (PST)")
     plt.ylabel("Direction Difference (°)")
     plt.title("Wind Direction Difference (Drone vs Anemometer)")
     plt.axhline(0, color="gray", linestyle="--", linewidth=1)

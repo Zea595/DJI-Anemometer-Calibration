@@ -151,10 +151,8 @@ def convert_file(input_path, output_path=None, assume_tz_name="America/Vancouver
             else:
                 speed = np.sqrt(u**2 + v**2) # a^2 + b^2 = c^2 NOTE calculating for c
                 
-                direction = (-math.degrees(math.atan2(v, u)) + 270) % 360
+                direction = (math.degrees(math.atan2(v,u)) + 360) % 360
 
-            # convert to miles per hour
-            speed = speed * 2.23694
             row["VectorMag"] = speed
             row["VectorDir"] = direction
 

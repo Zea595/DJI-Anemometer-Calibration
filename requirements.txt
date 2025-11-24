@@ -1,3 +1,7 @@
-pandas
+flask
 sqlalchemy
 psycopg2-binary
+pandas
+numpy
+matplotlib
+pandas

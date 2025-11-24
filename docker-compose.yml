@@ -1,6 +1,22 @@
 version: '3.9'
 
 services:
+
+  web:
+    build: .
+    container_name: rpas_web
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - ./uploads:/app/uploads
+      - ./data:/data              # <-- added shared /data mount
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    command: ["python", "app.py"]
+
   postgres:
     image: postgres:16
     container_name: rpas_postgres
@@ -12,7 +28,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5433:5433"
+      - "5432:5432"
 
   python:
     image: python:3.11-slim
@@ -25,23 +41,23 @@ services:
       - .env
     command: ["bash", "-c", "pip install -r requirements.txt && tail -f /dev/null"]
 
-jupyter:
-  image: jupyter/base-notebook:latest
-  container_name: rpas_jupyter
-  restart: unless-stopped
-  environment:
-    - JUPYTER_TOKEN=droneviz
-  ports:
-    - "8888:8888"
-  volumes:
-    - ./scripts:/home/jovyan/work/scripts
-    - ./data:/home/jovyan/work/data
-    - ./notebooks:/home/jovyan/work/notebooks
-    - ./requirements.txt:/tmp/requirements.txt
-  depends_on:
-    - postgres
-  command: >
-    bash -c "pip install -r /tmp/requirements.txt && start-notebook.sh"
+  jupyter:
+    image: jupyter/base-notebook:latest
+    container_name: rpas_jupyter
+    restart: unless-stopped
+    environment:
+      - JUPYTER_TOKEN=droneviz
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./scripts:/home/jovyan/work/scripts
+      - ./data:/home/jovyan/work/data   # <-- shared data volume
+      - ./notebooks:/home/jovyan/work/notebooks
+      - ./requirements.txt:/tmp/requirements.txt
+    depends_on:
+      - postgres
+    command: >
+      bash -c "pip install -r /tmp/requirements.txt && start-notebook.sh"
 
 
 volumes:

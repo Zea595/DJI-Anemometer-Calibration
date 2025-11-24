@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Analytics Dashboard</title>
+  <style>
+    body { background-color: #111; color: #eee; font-family: sans-serif; }
+    img { width: 90%; margin: 20px auto; display: block; border-radius: 10px; }
+    h1, h2 { text-align: center; }
+    a { color: #4af; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Drone & Anemometer Analytics</h1>
+  <p style="text-align:center;"><a href="/">← Back to Upload</a></p>
+
+  <h2>Wind Speed Comparison</h2>
+  <img src="{{ url_for('static', filename='plots/wind_comparison.png') }}" alt="Wind Comparison Plot">
+
+  <h2>Percentage Difference</h2>
+  <img src="{{ url_for('static', filename='plots/speed_difference.png') }}" alt="Speed Difference Plot">
+
+    <h2>Direction Difference</h2>
+  <img src="{{ url_for('static', filename='plots/direction_accuracy_scatter.png') }}" alt="Direction Difference Plot">
+
+</body>
+</html>
