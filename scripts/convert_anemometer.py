@@ -131,12 +131,14 @@ def convert_file(input_path, output_path=None, assume_tz_name="America/Vancouver
     """
 
     base_name = os.path.splitext(os.path.basename(input_path))[0]
-    output_path = Path("data/Anemometer_data_cleaned.csv")
+    output_path = Path("data/CLEAN_ANEMOMETER.csv")
 
     rows = []
     with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             parsed = parse_line(line, assume_tz_name, keep_sn=keep_sn)
+            if parsed["sn1"] == "":
+                continue
             if parsed:
                 rows.append(parsed)
 

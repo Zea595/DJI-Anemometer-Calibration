@@ -6,8 +6,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Drone measurements table
 -- =========================
 CREATE TABLE IF NOT EXISTS drone_measurements (
-  id                         BIGSERIAL PRIMARY KEY,
   drone_time_utc             TIMESTAMPTZ NOT NULL,  -- from Drone_Time(UTC+RFC3339)
+  drone_serial               TEXT NOT NULL,
   drone_time_pst             TIMESTAMPTZ,           -- Drone_Time(PST) localized to America/Vancouver, stored as UTC
   update_time_local_raw      TEXT,                  -- raw "CUSTOM.updateTime [local]" (e.g., 11:24:29.64 AM)
 
@@ -20,7 +20,10 @@ CREATE TABLE IF NOT EXISTS drone_measurements (
   wind_strength              TEXT,                  -- e.g., Calm / Light / Moderate...
   is_facing_wind             TEXT,                  -- store raw CSV string (e.g., "True"/"False")
   is_flying_into_wind        TEXT,                  -- store raw CSV string (e.g., "True"/"False")
-  drone_direction_deg        NUMERIC
+  drone_direction_deg        NUMERIC,
+  wind_speed_mps             NUMERIC,
+
+  PRIMARY KEY (drone_time_utc, drone_serial)
 );
 
 CREATE INDEX IF NOT EXISTS idx_drone_measurements_time ON drone_measurements (drone_time_utc);
@@ -29,9 +32,9 @@ CREATE INDEX IF NOT EXISTS idx_drone_measurements_time ON drone_measurements (dr
 -- Anemometer measurements table
 -- =============================
 CREATE TABLE IF NOT EXISTS anemometer_measurements (
-  id            BIGSERIAL PRIMARY KEY,
   ts_utc        TIMESTAMPTZ NOT NULL,  -- from ts
   raw_ts        TEXT,                  -- raw clock-like stamp "23:11:01:17:39:22.316"
+  sn1           NUMERIC,
   u             NUMERIC,
   v             NUMERIC,
   temperature_c NUMERIC,               -- from T
@@ -39,7 +42,9 @@ CREATE TABLE IF NOT EXISTS anemometer_measurements (
   batt_v        NUMERIC,
   batt_c        NUMERIC,
   vector_mag    NUMERIC,
-  vector_dir_deg NUMERIC
+  vector_dir_deg NUMERIC,
+
+  PRIMARY KEY (ts_utc, sn1)
 );
 
 CREATE INDEX IF NOT EXISTS idx_anemo_time ON anemometer_measurements (ts_utc);

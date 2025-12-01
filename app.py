@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 import os
 import import_cleaned_data
-from scripts import convert_anemometer, Clean_and_Timestamp
+from scripts import convert_anemometer, convert_anemometer_v2, Clean_and_Timestamp
 
 UPLOAD_DIR = "/app/uploads"
 DATA_DIR = "/data"
@@ -26,25 +26,32 @@ def index():
 # =====================================================
 @app.route("/upload", methods=["POST"])
 def upload():
-    drone_file = request.files.get("drone")
+    drone_files = request.files.getlist("drone")
     anemo_file = request.files.get("anemo")
     
 
-    if not (drone_file or anemo_file):
+    if not (drone_files or anemo_file):
         flash("Please upload at least one file.")
         return redirect(url_for("index"))
 
     # ----------------------------
     # DRONE FILE PROCESSING
     # ----------------------------
-    if drone_file:
-        drone_path = os.path.join(UPLOAD_DIR, drone_file.filename)
-        drone_file.save(drone_path)
+    drone_paths = []
+    for f in drone_files:
+        if not f or f.filename == "":
+            continue
+        drone_path = os.path.join(UPLOAD_DIR, f.filename)
+        f.save(drone_path)
+        drone_paths.append(drone_path)
+
+    if drone_paths:
         try:
-            Clean_and_Timestamp.main(drone_path)
-            flash(f"✅ Processed drone data: {drone_file.filename}")
+            # your Clean_and_Timestamp.main already supports input_paths=
+            Clean_and_Timestamp.main(input_paths=drone_paths)
+            flash(f"✅ Processed {len(drone_paths)} drone file(s).")
         except Exception as e:
-            flash(f"❌ Error processing drone file: {e}")
+            flash(f"❌ Error processing drone files: {e}")
             return redirect(url_for("index"))
 
     # ----------------------------
