@@ -37,10 +37,10 @@ def get_latest(patterns, required=True):
 # ======================================================
 def load_data():
     drone_path = get_latest([
-        os.path.join(CLEANED_DIR, "CLEAN_*.csv"),
-        os.path.join(DATA_DIR, "CLEAN_*.csv"),
+        os.path.join(CLEANED_DIR, "CLEAN_COMBINED.csv"),
+        os.path.join(DATA_DIR, "CLEAN_COMBINED.csv"),
     ])
-    anemo_path = get_latest(os.path.join(DATA_DIR, "Anemometer_data_*.csv"))
+    anemo_path = get_latest(os.path.join(DATA_DIR, "CLEAN_ANEMOMETER.csv"))
 
     print(f"[INFO] Using Drone CSV: {drone_path}")
     print(f"[INFO] Using Anemometer CSV: {anemo_path}")
